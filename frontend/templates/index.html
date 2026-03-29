@@ -7,7 +7,16 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
- <h1>Welcomebto StitchFlow AI</h1>
- <p>{{ message }}</p>   
+    <div class = "container">
+        <h1>Welcomebto StitchFlow AI</h1>
+        <p><i>"Good morning, Chef."</i></p>
+        <div class = "command-bar">
+            <input type="text"
+            id = "userInput" placeholder="Type or say: New order for koffi...">
+            <button onclick="sendCommand()">Send</button>
+        </div>   
+        <div id = "response" class="response-box"></div>
+    </div>
+    <script src="/static/script.js"></script>
 </body>
 </html>
