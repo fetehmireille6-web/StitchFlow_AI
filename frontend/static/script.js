@@ -20,7 +20,7 @@ async function sendCommand() {
             throw new Error('HTTP error! status: ${response.status}');
         }
         const data = await response.json();
-        resBox.innerHTML = '<p><b>AI:</b> ${data.ai_response}</p>';
+        resBox.innerHTML = `<p><b>AI:</b> ${data.ai_response}</p>`;
     } catch (error){
         console.error("Error sending command:", error);
         resBox.innerHTML = '<p style="color: red;">Error: Could not process command. Please try again.</p>'
