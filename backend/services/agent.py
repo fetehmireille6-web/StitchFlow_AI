@@ -1,5 +1,4 @@
 import re
-
 class StitchFlowAgent:
     def parse_command(self, text):
         """

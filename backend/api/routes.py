@@ -1,18 +1,26 @@
-from flask import Blueprint, request, jsonify, render_template
-from backend.services.agent import StitchFlowAgent
-from backend.services.tools import calculate_fabric
+from fastapi import APIRouter,  Request, HTTPException
+from pydantic import BaseModel
+from services.agent import StitchFlowAgent
+from services.tools import calculate_fabric
 
-api_bp = Blueprint('api', __name__)
+router = APIRouter()
 agent = StitchFlowAgent()
 
-@api_bp.route('/process',methods = ['POST'])
-def process_voice():
-    data = request.json
-    user_input = data.get("text", "")
-    result = agent.parse_command(user_input)
+class UserCommand(BaseModel):
+    text: str
 
-    return jsonify({
-        "status": "success", 
-        "ai_response": f"I've noted the order for {result['customer']}.",
-        "data": result
-    })
+@router.post('/process')
+async def process_command(command:UserCommand):
+    try:
+        user_text = command.text
+        result = agent.parse_command(user_text)
+        return {
+            "status": "success",
+            "ai_response": f"I've noted the order for {result.get('customer', 'an unknown customer')}",
+            "data": result
+        }
+    except Exception as e:
+        print(f"Error in /process route:{e}")
+        raise
+HTTPException(status_code=500, detail="Internal Sever Error: Could not process command.")
+    
