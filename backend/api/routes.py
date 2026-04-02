@@ -1,7 +1,7 @@
 from fastapi import APIRouter,  Request, HTTPException
 from pydantic import BaseModel
-from services.agent import StitchFlowAgent
-from services.tools import calculate_fabric
+from services.ai.agent import StitchFlowAgent
+from services.ai.tools import calculate_fabric
 
 router = APIRouter()
 agent = StitchFlowAgent()
