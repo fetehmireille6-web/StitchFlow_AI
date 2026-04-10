@@ -1,0 +1,115 @@
+/* style.css */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: #f4f6f9;
+  margin: 0;
+  padding: 2rem;
+  color: #333;
+}
+
+h1 {
+  text-align: center;
+  color: #2c3e50;
+}
+
+nav {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+nav a {
+  margin: 0 1rem;
+  text-decoration: none;
+  color: #3498db;
+  font-weight: bold;
+}
+nav a:hover {
+  text-decoration: underline;
+}
+
+.container {
+  max-width: 600px;
+  margin: auto;
+  background: #fff;
+  padding: 2rem;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+}
+
+input, textarea, button {
+  width: 100%;
+  margin: 0.5rem 0;
+  padding: 0.8rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+}
+
+button {
+  background: #4CAF50;
+  color: white;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+button:hover {
+  background: #45a049;
+}
+
+.preview {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #eee;
+  border-radius: 8px;
+  background: #fafafa;
+}
+.preview img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+/* Orders page cards */
+.order-card {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  transition: transform 0.2s;
+}
+.order-card:hover {
+  transform: translateY(-3px);
+}
+.order-card img {
+  max-width: 200px;
+  border-radius: 6px;
+  margin-top: 1rem;
+  display: block;
+}
+.order-card button {
+  background: #e74c3c;
+  color: white;
+  border: none;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  font-weight: bold;
+}
+.order-card button:hover {
+  background: #c0392b;
+}
+#voiceBtn {
+  background: #3498db;
+  margin-top: 0.5rem;
+  color: white;
+  font-weight: bold;
+  border: none;
+  padding: 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+#voiceBtn.recording {
+  background: #e74c3c;
+}

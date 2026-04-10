@@ -38,11 +38,12 @@ StitchFlow/
    git clone <repo-url>
    cd StitchFlow
 
-## 🚀 install dependencies
+## 🚀 Install Dependencies
+From the project root (`StitchFlow/`):
 pip install -r requirements.txt
 
 ## 🚀 Running the sever
-from the project root (StitchFlow/):
+From the project root (`StitchFlow/`):
 
 uvicorn backend.main:app --reload
 - The backend will start at: http://127.0.0.1:8000

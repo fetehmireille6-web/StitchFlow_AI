@@ -1,22 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StitchFlow AI</title>
-    <link rel="stylesheet" href="/static/css/style.css">
+  <meta charset="UTF-8">
+  <title>StitchFlow AI</title>
+  <link rel="stylesheet" href="/static/style.css"> <!-- external CSS -->
 </head>
 <body>
-    <div class = "container">
-        <h1>Welcomebto StitchFlow AI</h1>
-        <p><i>"Good morning, Chef."</i></p>
-        <div class = "command-bar">
-            <input type="text"
-            id = "userInput" placeholder="Type or say: New order for koffi...">
-            <button onclick="sendCommand()">Send</button>
-        </div>   
-        <div id = "response" class="response-box"></div>
-    </div>
-    <script src="/static/script.js"></script>
+  <h1>StitchFlow AI</h1>
+
+  <!-- Navigation bar -->
+  <nav>
+    <a href="/">New Order</a>
+    <a href="/orders-page">View Orders</a>
+  </nav>
+
+  <div class="container">
+    <!-- Voice/Text Input -->
+    <input id="inputBox" type="text" placeholder="Type or say: New order for">
+    <button id="voiceBtn">🎤 Start Mic</button>
+    <button id="sendBtn">Send</button>
+
+    <!-- Image Upload Form -->
+    <form id="uploadForm">
+      <input type="text" name="customer" placeholder="Customer Name">
+      <input type="date" name="due_date">
+      <textarea name="text" placeholder="Enter measurements"></textarea>
+      <input type="file" name="file" accept="image/*">
+      <button type="submit">Upload Style</button>
+    </form>
+
+    <!-- Preview -->
+    <div class="preview" id="preview"></div>
+  </div>
+
+  <script src="/static/script.js" defer></script> <!-- external JS -->
 </body>
 </html>
