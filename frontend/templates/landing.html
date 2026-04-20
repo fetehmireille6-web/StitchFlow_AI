@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>StitchFlow | AI-Powered Sewing Assistant</title>
+    <!-- Font Awesome 6 (free icons) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles.css?v=1.0.2">
+</head>
+
+
+<body>
+    <div class="container">
+        <div id="messageContainer"></div>
+        
+        <!-- navigation -->
+        <header class="landing-header">
+            <div class="logo">
+                Stitch<span>Flow</span><span class="logo-sub">| AI-Powered Sewing</span>
+            </div>
+            <nav class="auth-nav">
+                <a href="/login" class="btn-outline-light">Login</a>
+                <a href="/signup" class="signup-btn">Sign Up →</a>
+            </nav>
+        </header>
+
+        <!-- hero main -->
+        <main class="landing-main">
+            <div class="landing-content">
+                <div class="hero-badge"><i class="fas fa-robot"></i> AI-Powered Tailoring Suite</div>
+                <h1>
+                    Smart Measurement Tracking <br>
+                    <span class="hero-highlight"> & Fabric Intelligence</span>
+                </h1>
+                <p class="hero-desc">
+                    Your AI-powered sewing assistant that extracts measurements from photos, calculates fabric precisely, and organizes orders — so you never miss a fitting.
+                </p>
+                <div class="hero-buttons">
+                    <a href="/signup" class="btn-primary-landing">Get Started for Free <i class="fas fa-arrow-right" style="margin-left: 10px;"></i></a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat-item"><span class="stat-number">99+</span><span class="stat-label">tailors trusted</span></div>
+                    <div class="stat-item"><span class="stat-number">1,200+</span><span class="stat-label">orders/month</span></div>
+                    <div class="stat-item"><span class="stat-number">94%</span><span class="stat-label">accuracy AI</span></div>
+                </div>
+            </div>
+
+            <div class="hero-visual">
+                <div class="ai-badge"><i class="fas fa-camera"></i> AI Photo identification active...</div>
+                <div class="visual-card">
+                    <div class="measure-row"><strong>Bust:</strong> <span>34"</span></div>
+                    <div class="measure-row"><strong>Waist:</strong> <span>26"</span></div>
+                    <div class="measure-row"><strong>Shoulder:</strong> <span>15°</span></div>
+                    <div class="confidence"><i class="fas fa-chart-line"></i> AI confidence 94%</div>
+                </div>
+                <p style="margin-top: 20px; font-size: 0.75rem; color:#8F9E9A;"><i class="fas fa-magic"></i> Snap & detect — instant AI measurements</p>
+            </div>
+        </main>
+
+        <!-- Features grid -->
+        <section class="features-section" id="features">
+            <div class="section-header">
+                <h2>Precision Craftsmanship, <span style="color:var(--accent-pink-dark);">Powered by AI</span></h2>
+                <p>Everything you need to streamline your tailoring business</p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-ruler-combined"></i></div>
+                    <h3>Instant AI Measurements</h3>
+                    <p>Snap a photo — AI identifies key landmarks and extracts measurements in seconds.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-calculator"></i></div>
+                    <h3>Precise Fabric Calculation</h3>
+                    <p>Intelligent fabric yield algorithms reduce waste and cut costs dramatically.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fas fa-bell"></i></div>
+                    <h3>Smart Reminders</h3>
+                    <p>Never miss a deadline or fitting session with automated priority alerts.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- AI Showcase Block -->
+        <div class="ai-showcase">
+            <div class="ai-flex">
+                <div class="ai-left">
+                    <h3 style="font-size: 2rem; font-weight: 800; margin-bottom: 28px; color: var(--brand-blue);"><i class="fas fa-microchip" style="color: var(--accent-pink-dark); margin-right: 12px;"></i> AI Deep Dive</h3>
+                    <ul class="ai-list">
+                        <li><i class="fas fa-camera-retro"></i> <strong>Instant Photo Measurements</strong> — just snap, AI identifies landmarks.</li>
+                        <li><i class="fas fa-chart-pie"></i> <strong>Intelligence Fabric Yield</strong> — cuts cost by up to 18%.</li>
+                        <li><i class="fas fa-clock"></i> <strong>Timeline Optimization</strong> — automated priority alerts.</li>
+                    </ul>
+                </div>
+                <div class="ai-right">
+                    <div class="ai-percent">94%</div>
+                    <p style="font-weight: 600; color: var(--brand-blue);">AI landmark confidence</p>
+                    <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--accent-pink-bg);">
+                    <div style="color: var(--light-text-color); margin-bottom: 10px;"><i class="fas fa-scissors"></i> Fabric waste reduced by <strong>~18%</strong></div>
+                    <div style="color: var(--light-text-color);"><i class="fas fa-chart-line"></i> 1,200+ orders processed monthly</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Elevate Section -->
+        <div class="elevate-studio">
+            <div class="elevate-left">
+                <h2>Elevate your tailoring studio</h2>
+                <p>Join hundreds of modern tailors using StitchFlow to reduce errors and save fabric.</p>
+                <a href="/signup" class="btn-primary-landing" style="display: inline-block;">Start Free Trial →</a>
+            </div>
+            <div class="testimonial-card">
+                <i class="fas fa-quote-left"></i>
+                <p>"AI streamlines our entire workflow — measurements are always accurate, and we've cut fabric waste significantly."</p>
+                <span style="font-size: 0.8rem; font-weight: 600; color: var(--brand-blue);">— Sophia Chen, Master Tailor</span>
+            </div>
+        </div>
+
+        <!-- CTA section -->
+        <div class="cta-section">
+            <h3>Ready to transform your atelier?</h3>
+            <p>Start your free trial today — no credit card required.</p>
+            <a href="/signup" class="btn-light">Start Free Trial <i class="fas fa-arrow-right"></i></a>
+        </div>
+
+        <footer class="landing-footer">
+            <div>© 2026 StitchFlow — AI for Tailors</div>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+            </div>
+        </footer>
+    </div>
+</body>
+</html>

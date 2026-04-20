@@ -1,38 +1,987 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>StitchFlow AI</title>
-  <link rel="stylesheet" href="/static/style.css"> <!-- external CSS -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StitchFlow Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+    <style>
+        /* Scanning Animation Styles */
+        @keyframes scanMove {
+            0% {
+                top: 0%;
+                opacity: 1;
+            }
+            25% {
+                top: 25%;
+            }
+            50% {
+                top: 50%;
+                background: linear-gradient(90deg, transparent, #1A4A5C, #F3B3C2, #1A4A5C, transparent);
+            }
+            75% {
+                top: 75%;
+            }
+            100% {
+                top: 100%;
+                opacity: 0.5;
+            }
+        }
+        
+        @keyframes pulseGlow {
+            0%, 100% {
+                box-shadow: 0 0 5px rgba(26, 74, 92, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 20px rgba(26, 74, 92, 0.6), 0 0 30px rgba(243, 179, 194, 0.4);
+            }
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .scanning-container {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            background: #1a1a2e;
+            animation: pulseGlow 1.5s ease-in-out infinite;
+        }
+        
+        .scanning-image {
+            width: 100%;
+            max-height: 400px;
+            object-fit: contain;
+            display: block;
+            opacity: 0.7;
+        }
+        
+        .scan-line {
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, transparent, #1A4A5C, #F3B3C2, #1A4A5C, transparent);
+            animation: scanMove 3s ease-in-out infinite;
+            z-index: 10;
+        }
+        
+        .scan-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+        
+        .scan-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.2);
+            border-top: 4px solid #F3B3C2;
+            border-right: 4px solid #1A4A5C;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        
+        .scan-text {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            text-align: center;
+        }
+        
+        .scan-step {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 14px;
+            margin-top: 10px;
+            text-align: center;
+        }
+        
+        .scan-progress-bar {
+            width: 250px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+            margin-top: 20px;
+            overflow: hidden;
+        }
+        
+        .scan-progress-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, #F3B3C2, #1A4A5C);
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+        
+        .measurement-tag {
+            position: absolute;
+            background: rgba(26, 74, 92, 0.9);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            white-space: nowrap;
+            z-index: 15;
+            animation: fadeInOut 0.5s ease;
+        }
+        
+        @keyframes fadeInOut {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .success-checkmark {
+            text-align: center;
+            padding: 30px;
+        }
+        
+        .success-checkmark i {
+            font-size: 64px;
+            color: #4CAF50;
+            margin-bottom: 15px;
+        }
+        
+        .extracted-measurements-list {
+            background: #f8f9fa;
+            border-radius: 16px;
+            padding: 15px;
+            margin-top: 15px;
+            text-align: left;
+        }
+        
+        .extracted-measurement-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #e5e7eb;
+        }
+    </style>
 </head>
 <body>
-  <h1>StitchFlow AI</h1>
+    <div class="top-bar">
+        <button id="menuBtn" class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-text" style="font-weight: 700; color: #1A4A5C; font-size: 1.2rem;">StitchFlow</div>
+        <div style="width: 40px;"></div>
+    </div>
 
-  <!-- Navigation bar -->
-  <nav>
-    <a href="/">New Order</a>
-    <a href="/orders-page">View Orders</a>
-  </nav>
+    <div id="overlay" class="overlay"></div>
 
-  <div class="container">
-    <!-- Voice/Text Input -->
-    <input id="inputBox" type="text" placeholder="Type or say: New order for">
-    <button id="voiceBtn">🎤 Start Mic</button>
-    <button id="sendBtn">Send</button>
+    <div id="drawer" class="drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 1.5rem; color: #1A4A5C;">StitchFlow</h2>
+            <span id="closeDrawer" class="close-btn">&times;</span>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/dashboard" class="active"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/orders-page"><i class="fas fa-clipboard-list"></i> Orders</a>
+            <a href="/reminders"><i class="fas fa-bell"></i> Reminders</a>
+            <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </div>
 
-    <!-- Image Upload Form -->
-    <form id="uploadForm">
-      <input type="text" name="customer" placeholder="Customer Name">
-      <input type="date" name="due_date">
-      <textarea name="text" placeholder="Enter measurements"></textarea>
-      <input type="file" name="file" accept="image/*">
-      <button type="submit">Upload Style</button>
-    </form>
+    <div class="container">
+        <div class="tabs">
+            <button id="aiTabBtn" class="tab-btn active">🤖 AI Assistant</button>
+            <button id="formTabBtn" class="tab-btn">📝 Order Details</button>
+        </div>
 
-    <!-- Preview -->
-    <div class="preview" id="preview"></div>
-  </div>
+        <div id="messageContainer"></div>
 
-  <script src="/static/script.js" defer></script> <!-- external JS -->
+        <!-- AI Assistant View -->
+        <div id="aiAssistantView" class="tab-content active">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-camera"></i> Smart Measurement Scanner
+                </div>
+                <p class="card-description">Take a photo of your customer - AI will scan and extract measurements automatically.</p>
+                
+                <div class="ai-upload-zone" id="aiUploadZone">
+                    <i class="fas fa-camera" style="font-size: 48px;"></i>
+                    <p>Click to take a photo or upload</p>
+                    <label for="aiPhotoUpload" class="btn btn-primary">📸 Take Photo / Upload</label>
+                    <input id="aiPhotoUpload" type="file" accept="image/*" capture="environment" style="display: none;">
+                </div>
+                
+                <div id="aiPreview" class="preview-area" style="display: none;"></div>
+            </div>
+
+            <!-- Voice Command Section -->
+            <div class="card" style="margin-top: 20px;">
+                <div class="card-title">
+                    <i class="fas fa-microphone-alt"></i> Voice Command
+                </div>
+                <p class="card-description">Or speak customer details - measurements will auto-fill.</p>
+                <div style="text-align: center;">
+                    <button id="voiceBtn" class="btn btn-primary" style="background: #E58A9F; padding: 15px 30px; font-size: 16px;">
+                        <i class="fas fa-microphone"></i> 🎤 Start Voice Command
+                    </button>
+                    <div id="voiceTranscript" style="margin-top: 15px; padding: 12px; background: #f8f9fa; border-radius: 12px; min-height: 60px; display: none;">
+                        <strong>📝 Recognized Text:</strong>
+                        <p id="voiceText" style="margin-top: 8px; color: #1A4A5C;"></p>
+                    </div>
+                    <p id="voiceStatus" style="font-size: 0.85rem; color: #5B6E6B; margin-top: 10px;">
+                        <i class="fas fa-info-circle"></i> Example: "Customer Mary, chest 34, waist 28, senator suit"
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Details View -->
+        <div id="orderDetailsView" class="tab-content">
+            <div class="card">
+                <div class="card-title">
+                    <i class="fas fa-clipboard-list"></i> Order Details
+                </div>
+                <p class="card-description" id="formDescription">Fill in customer information. Measurements will auto-load after scanning.</p>
+                
+                <form id="uploadForm" class="order-details-form">
+                    <!-- Customer Information -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>👤 Customer Name *</label>
+                            <input type="text" name="customer" id="customerName" placeholder="Enter customer name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>📞 Phone Number</label>
+                            <input type="tel" name="phone" id="customerPhone" placeholder="e.g., +237 6XX XXX XXX">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+    <label>📅 Due Date *</label>
+    <input type="date" name="due_date" id="dueDate" required min="">
+    <small style="color: #E58A9F; font-size: 11px; margin-top: 5px; display: block;">
+        <i class="fas fa-info-circle"></i> Cannot select past dates
+    </small>
+</div>
+                        <div class="form-group">
+                            <label>👔 Garment Type *</label>
+                            <select name="garment_type" id="garmentTypeSelect" required>
+                                <option value="">-- Select Garment Type --</option>
+                                <option value="Senator Suit">Senator Suit</option>
+                                <option value="Agbada">Agbada (Flowing Robe)</option>
+                                <option value="Kaftan">Kaftan</option>
+                                <option value="Ball Gown">Ball Gown (Full Length)</option>
+                                <option value="Mermaid Gown">Mermaid Gown</option>
+                                <option value="Standard Gown">Standard Gown</option>
+                                <option value="Dashiki">Dashiki</option>
+                                <option value="Shirt">Shirt</option>
+                                <option value="Trousers/Pants">Trousers/Pants</option>
+                                <option value="Buba + Iro">Buba + Iro (Traditional Set)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Body Measurements Section -->
+                    <div style="background: #f8f9fa; padding: 20px; border-radius: 16px; margin: 10px 0;">
+                        <h4 style="margin-bottom: 15px; color: #1A4A5C;">📏 Body Measurements (inches)</h4>
+                        <div id="measurementsLoadedBadge" style="display: none; background: #4CAF50; color: white; padding: 5px 10px; border-radius: 20px; font-size: 12px; margin-bottom: 15px;">
+                            <i class="fas fa-check-circle"></i> Measurements loaded from scan
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Chest / Bust *</label>
+                                <input type="number" name="chest" id="chestInput" step="0.5" placeholder="e.g., 42">
+                            </div>
+                            <div class="form-group">
+                                <label>Waist</label>
+                                <input type="number" name="waist" id="waistInput" step="0.5" placeholder="e.g., 34">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Hips</label>
+                                <input type="number" name="hips" id="hipsInput" step="0.5" placeholder="e.g., 44">
+                            </div>
+                            <div class="form-group">
+                                <label>Shoulder Width</label>
+                                <input type="number" name="shoulder" id="shoulderInput" step="0.5" placeholder="e.g., 18">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Sleeve Length</label>
+                                <input type="number" name="sleeve" id="sleeveInput" step="0.5" placeholder="e.g., 25">
+                            </div>
+                            <div class="form-group">
+                                <label>Inseam</label>
+                                <input type="number" name="inseam" id="inseamInput" step="0.5" placeholder="e.g., 32">
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Neck</label>
+                                <input type="number" name="neck" id="neckInput" step="0.5" placeholder="e.g., 16">
+                            </div>
+                            <div class="form-group">
+                                <label>Full Length</label>
+                                <input type="number" name="full_length" id="fullLengthInput" step="0.5" placeholder="e.g., 60">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Additional Notes -->
+                    <div class="form-group">
+                        <label>📝 Additional Notes</label>
+                        <textarea name="text" id="notesText" rows="3" placeholder="Any special instructions..."></textarea>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>🖼️ Reference Image (Optional)</label>
+                            <input type="file" name="file" id="imageFile" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <!-- Fabric Estimate Display -->
+                    <div id="fabricEstimateDisplay" class="fabric-estimate-card" style="display: none;">
+                        <i class="fas fa-scissors"></i> 
+                        <strong>Estimated Fabric Needed:</strong> 
+                        <span id="yardageValue">0</span> yards
+                    </div>
+
+                    <div id="formPreview" class="preview-area"></div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> 💾 Save Order
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Enlargement Modal -->
+    <div id="imageModal" class="modal" onclick="this.style.display='none'">
+        <span class="close-btn" style="position: absolute; top: 20px; right: 30px; color: white; font-size: 30px; cursor: pointer;">&times;</span>
+        <img class="modal-content" id="enlargedImg">
+    </div>
+
+    <script>
+        (function() {
+            // DOM Elements
+            const aiTabBtn = document.getElementById('aiTabBtn');
+            const formTabBtn = document.getElementById('formTabBtn');
+            const aiView = document.getElementById('aiAssistantView');
+            const orderView = document.getElementById('orderDetailsView');
+            const menuBtn = document.getElementById('menuBtn');
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('overlay');
+            const closeDrawer = document.getElementById('closeDrawer');
+            const aiPhotoUpload = document.getElementById('aiPhotoUpload');
+            const aiPreview = document.getElementById('aiPreview');
+            const uploadForm = document.getElementById('uploadForm');
+            const messageContainer = document.getElementById('messageContainer');
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+            const voiceTranscript = document.getElementById('voiceTranscript');
+            const voiceText = document.getElementById('voiceText');
+            const fabricEstimateDisplay = document.getElementById('fabricEstimateDisplay');
+            const yardageValue = document.getElementById('yardageValue');
+            const measurementsLoadedBadge = document.getElementById('measurementsLoadedBadge');
+            const formDescription = document.getElementById('formDescription');
+            
+            // Form fields
+            const customerName = document.getElementById('customerName');
+            const customerPhone = document.getElementById('customerPhone');
+            const dueDateInput = document.getElementById('dueDate');
+            const garmentTypeSelect = document.getElementById('garmentTypeSelect');
+            const chestInput = document.getElementById('chestInput');
+            const waistInput = document.getElementById('waistInput');
+            const hipsInput = document.getElementById('hipsInput');
+            const shoulderInput = document.getElementById('shoulderInput');
+            const sleeveInput = document.getElementById('sleeveInput');
+            const inseamInput = document.getElementById('inseamInput');
+            const neckInput = document.getElementById('neckInput');
+            const fullLengthInput = document.getElementById('fullLengthInput');
+            const notesText = document.getElementById('notesText');
+            const imageFile = document.getElementById('imageFile');
+            const formPreview = document.getElementById('formPreview');
+
+            let recognition = null;
+            let scanInterval = null;
+
+            function displayMessage(message, type = 'info') {
+                if (!messageContainer) return;
+                const msgDiv = document.createElement('div');
+                msgDiv.className = `alert alert-${type}`;
+                const icon = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle');
+                msgDiv.innerHTML = `<i class="fas ${icon}"></i> ${message}`;
+                messageContainer.innerHTML = '';
+                messageContainer.appendChild(msgDiv);
+                setTimeout(() => {
+                    msgDiv.style.opacity = '0';
+                    setTimeout(() => msgDiv.remove(), 5000);
+                }, 5000);
+            }
+
+            // Switch to Order Details tab
+            function switchToOrderTab() {
+                if (formTabBtn) {
+                    formTabBtn.click();
+                }
+            }
+
+            // Tab switching
+            if (aiTabBtn && formTabBtn) {
+                aiTabBtn.addEventListener('click', () => {
+                    aiTabBtn.classList.add('active');
+                    formTabBtn.classList.remove('active');
+                    aiView.classList.add('active');
+                    orderView.classList.remove('active');
+                });
+                formTabBtn.addEventListener('click', () => {
+                    formTabBtn.classList.add('active');
+                    aiTabBtn.classList.remove('active');
+                    orderView.classList.add('active');
+                    aiView.classList.remove('active');
+                });
+            }
+
+            // Drawer
+            function hideDrawer() {
+                drawer.classList.remove('open');
+                overlay.classList.remove('active');
+            }
+            if (menuBtn) menuBtn.addEventListener('click', () => {
+                drawer.classList.add('open');
+                overlay.classList.add('active');
+            });
+            if (overlay) overlay.addEventListener('click', hideDrawer);
+            if (closeDrawer) closeDrawer.addEventListener('click', hideDrawer);
+
+            // Yardage Calculation
+            function calculateYardageFromInputs() {
+                let chest = parseFloat(chestInput?.value);
+                if (isNaN(chest)) chest = 0;
+                
+                const garmentType = garmentTypeSelect?.value || '';
+                
+                if (chest === 0 || !garmentType) {
+                    fabricEstimateDisplay.style.display = 'none';
+                    return null;
+                }
+                
+                const gt = garmentType.toLowerCase();
+                let yardage = 0;
+                
+                if (gt.includes('senator') || gt.includes('suit')) {
+                    yardage = 3.5 + Math.max(0, (chest - 38) * 0.2);
+                } else if (gt.includes('agbada')) {
+                    yardage = 7.0 + Math.max(0, (chest - 40) * 0.25);
+                } else if (gt.includes('kaftan')) {
+                    yardage = 4.0 + Math.max(0, (chest - 42) * 0.15);
+                } else if (gt.includes('ball gown')) {
+                    yardage = 6.0 + Math.max(0, (chest - 36) * 0.3);
+                } else if (gt.includes('mermaid')) {
+                    yardage = 5.0 + Math.max(0, (chest - 34) * 0.25);
+                } else if (gt.includes('standard gown') || gt === 'standard gown') {
+                    yardage = 4.5 + Math.max(0, (chest - 36) * 0.2);
+                } else if (gt.includes('dashiki')) {
+                    yardage = 2.5 + Math.max(0, (chest - 40) * 0.1);
+                } else if (gt.includes('shirt')) {
+                    yardage = 2.0 + Math.max(0, (chest - 38) * 0.1);
+                } else if (gt.includes('trousers') || gt.includes('pants')) {
+                    yardage = 1.5 + Math.max(0, (chest - 34) * 0.05);
+                } else if (gt.includes('buba') || gt.includes('iro')) {
+                    yardage = 5.5 + Math.max(0, (chest - 38) * 0.15);
+                } else {
+                    fabricEstimateDisplay.style.display = 'none';
+                    return null;
+                }
+                
+                yardage = parseFloat(yardage.toFixed(1));
+                fabricEstimateDisplay.style.display = 'block';
+                yardageValue.innerText = yardage;
+                
+                return yardage;
+            }
+
+            if (garmentTypeSelect) garmentTypeSelect.addEventListener('change', calculateYardageFromInputs);
+            if (chestInput) chestInput.addEventListener('input', calculateYardageFromInputs);
+
+            // ========== DISPLAY SCANNING ANIMATION ==========
+            function showScanningAnimation(file) {
+                aiPreview.style.display = 'block';
+                aiPreview.innerHTML = `
+                    <div class="scanning-container">
+                        <img src="${URL.createObjectURL(file)}" class="scanning-image" alt="Scanning...">
+                        <div class="scan-line"></div>
+                        <div class="scan-overlay">
+                            <div class="scan-spinner"></div>
+                            <div class="scan-text">🔍 AI Scanning Body Measurements</div>
+                            <div class="scan-step" id="scanStepText">Analyzing image quality...</div>
+                            <div class="scan-progress-bar">
+                                <div class="scan-progress-fill" id="scanProgressFill"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                
+                // Animate progress steps
+                const steps = [
+                    { progress: 10, text: "📸 Analyzing image quality..." },
+                    { progress: 25, text: "📍 Detecting body position..." },
+                    { progress: 40, text: "🔍 Identifying key landmarks..." },
+                    { progress: 55, text: "📏 Measuring chest area..." },
+                    { progress: 70, text: "📏 Measuring waist and hips..." },
+                    { progress: 85, text: "📏 Measuring shoulders and sleeves..." },
+                    { progress: 95, text: "✅ Finalizing measurements..." },
+                    { progress: 100, text: "🎉 Scan complete! Loading measurements..." }
+                ];
+                
+                let stepIndex = 0;
+                scanInterval = setInterval(() => {
+                    if (stepIndex < steps.length) {
+                        const step = steps[stepIndex];
+                        const progressFill = document.getElementById('scanProgressFill');
+                        const stepText = document.getElementById('scanStepText');
+                        if (progressFill) progressFill.style.width = step.progress + '%';
+                        if (stepText) stepText.innerHTML = step.text;
+                        stepIndex++;
+                    } else {
+                        clearInterval(scanInterval);
+                    }
+                }, 400);
+                
+                return scanInterval;
+            }
+
+            // ========== POPULATE MEASUREMENTS ONLY (Not customer info) ==========
+            function populateMeasurementsOnly(measurements) {
+                if (!measurements) return;
+                
+                let populatedCount = 0;
+                
+                // Only populate measurement fields, not customer info
+                if (measurements.chest && chestInput) {
+                    chestInput.value = measurements.chest;
+                    populatedCount++;
+                }
+                if (measurements.bust && chestInput && !measurements.chest) {
+                    chestInput.value = measurements.bust;
+                    populatedCount++;
+                }
+                if (measurements.waist && waistInput) {
+                    waistInput.value = measurements.waist;
+                    populatedCount++;
+                }
+                if (measurements.hips && hipsInput) {
+                    hipsInput.value = measurements.hips;
+                    populatedCount++;
+                }
+                if (measurements.shoulder && shoulderInput) {
+                    shoulderInput.value = measurements.shoulder;
+                    populatedCount++;
+                }
+                if (measurements.sleeve && sleeveInput) {
+                    sleeveInput.value = measurements.sleeve;
+                    populatedCount++;
+                }
+                if (measurements.inseam && inseamInput) {
+                    inseamInput.value = measurements.inseam;
+                    populatedCount++;
+                }
+                if (measurements.neck && neckInput) {
+                    neckInput.value = measurements.neck;
+                    populatedCount++;
+                }
+                if (measurements.full_length && fullLengthInput) {
+                    fullLengthInput.value = measurements.full_length;
+                    populatedCount++;
+                }
+                
+                // Show badge that measurements were loaded
+                if (measurementsLoadedBadge && populatedCount > 0) {
+                    measurementsLoadedBadge.style.display = 'inline-block';
+                    setTimeout(() => {
+                        measurementsLoadedBadge.style.opacity = '0';
+                        setTimeout(() => {
+                            measurementsLoadedBadge.style.display = 'none';
+                            measurementsLoadedBadge.style.opacity = '1';
+                        }, 3000);
+                    }, 3000);
+                }
+
+                if (dueDateInput) {
+    const today = new Date().toISOString().split('T')[0];
+    dueDateInput.setAttribute('min', today);
+    
+    // Set default to 7 days from now
+    const defaultDate = new Date();
+    defaultDate.setDate(defaultDate.getDate() + 7);
+    dueDateInput.value = defaultDate.toISOString().split('T')[0];
+}
+
+// Also validate on change
+if (dueDateInput) {
+    dueDateInput.addEventListener('change', function() {
+        const selectedDate = this.value;
+        const today = new Date().toISOString().split('T')[0];
+        if (selectedDate < today) {
+            displayMessage('❌ Cannot select a past date! Please choose today or a future date.', 'error');
+            this.value = today;
+        }
+    });
+}
+                
+                // Update form description
+                if (formDescription && populatedCount > 0) {
+                    formDescription.innerHTML = `<i class="fas fa-check-circle" style="color: #4CAF50;"></i> ${populatedCount} measurements loaded from scan! Please select Garment Type and complete customer details.`;
+                    setTimeout(() => {
+                        formDescription.innerHTML = 'Fill in customer information. Measurements have been auto-loaded from the scan.';
+                    }, 5000);
+                }
+                
+                // Calculate yardage after populating
+                setTimeout(calculateYardageFromInputs, 100);
+                
+                return populatedCount;
+            }
+
+            // ========== AI PHOTO UPLOAD WITH SCANNING ANIMATION ==========
+            if (aiPhotoUpload) {
+                aiPhotoUpload.onchange = async (event) => {
+                    const file = event.target.files[0];
+                    if (!file) return;
+                    
+                    // Show scanning animation
+                    const scanIntervalId = showScanningAnimation(file);
+                    
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    try {
+                        const response = await fetch('/process-image', { method: 'POST', body: formData });
+                        const result = await response.json();
+                        console.log('AI Scan Result:', result);
+                        
+                        // Clear scanning animation
+                        clearInterval(scanIntervalId);
+                        
+                        if (result.status === 'success' && result.data) {
+                            const measurements = result.data.measurements || {};
+                            const measurementCount = Object.keys(measurements).length;
+                            
+                            if (measurementCount > 0) {
+                                // Populate ONLY measurements (not customer info)
+                                const populated = populateMeasurementsOnly(measurements);
+                                
+                                // Show success with measurement summary
+                                const measurementList = Object.entries(measurements).slice(0, 5)
+                                    .map(([k, v]) => `${k}: ${v}`).join(', ');
+                                
+                                aiPreview.innerHTML = `
+                                    <div class="success-checkmark">
+                                        <i class="fas fa-check-circle"></i>
+                                        <h4>✅ Scan Complete!</h4>
+                                        <p>Successfully extracted ${measurementCount} measurements:</p>
+                                        <div class="extracted-measurements-list">
+                                            ${Object.entries(measurements).map(([k, v]) => 
+                                                `<div class="extracted-measurement-item">
+                                                    <strong>${k.charAt(0).toUpperCase() + k.slice(1)}:</strong> 
+                                                    <span>${v}"</span>
+                                                </div>`
+                                            ).join('')}
+                                        </div>
+                                        <p style="margin-top: 15px; color: #1A4A5C;">
+                                            <i class="fas fa-arrow-right"></i> Measurements loaded into Order Details
+                                        </p>
+                                        <button class="btn btn-primary" onclick="document.getElementById('formTabBtn').click()" style="margin-top: 15px;">
+                                            Continue to Order Form →
+                                        </button>
+                                    </div>
+                                `;
+                                
+                                displayMessage(`✅ ${measurementCount} measurements extracted! Please select Garment Type and complete order.`, 'success');
+                                
+                                // Auto-switch to order form after 2 seconds
+                                setTimeout(() => {
+                                    if (formTabBtn) formTabBtn.click();
+                                }, 2000);
+                            } else {
+                                aiPreview.innerHTML = `
+                                    <div class="success-checkmark">
+                                        <i class="fas fa-exclamation-triangle" style="color: #ff9800;"></i>
+                                        <h4>⚠️ No Measurements Detected</h4>
+                                        <p>Could not detect body measurements from this photo.</p>
+                                        <p style="font-size: 14px; margin-top: 10px;">Try:
+                                            <br>• Using a front-facing photo
+                                            <br>• Better lighting
+                                            <br>• Person standing straight
+                                        </p>
+                                        <button class="btn btn-primary" onclick="document.getElementById('aiPhotoUpload').click()" style="margin-top: 15px;">
+                                            Try Another Photo
+                                        </button>
+                                    </div>
+                                `;
+                                displayMessage('⚠️ No measurements detected. Please try a clearer photo or enter manually.', 'warning');
+                            }
+                        } else {
+                            aiPreview.innerHTML = `
+                                <div class="success-checkmark">
+                                    <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                                    <h4>Scan Failed</h4>
+                                    <p>Could not process the image. Please try again.</p>
+                                    <button class="btn btn-primary" onclick="document.getElementById('aiPhotoUpload').click()" style="margin-top: 15px;">
+                                        Try Again
+                                    </button>
+                                </div>
+                            `;
+                            displayMessage('Failed to process image. Please try again.', 'error');
+                        }
+                    } catch (error) {
+                        console.error('AI Scan Error:', error);
+                        clearInterval(scanIntervalId);
+                        aiPreview.innerHTML = `
+                            <div class="success-checkmark">
+                                <i class="fas fa-exclamation-triangle" style="color: #dc3545;"></i>
+                                <h4>Scan Error</h4>
+                                <p>${error.message || 'Something went wrong'}</p>
+                                <button class="btn btn-primary" onclick="document.getElementById('aiPhotoUpload').click()" style="margin-top: 15px;">
+                                    Try Again
+                                </button>
+                            </div>
+                        `;
+                        displayMessage('Error during scan. Please try again.', 'error');
+                    }
+                    aiPhotoUpload.value = '';
+                };
+            }
+
+            // ========== VOICE COMMAND - Populates customer info AND measurements ==========
+            function initVoiceRecognition() {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) {
+                    if (voiceStatus) voiceStatus.innerHTML = '❌ Voice recognition not supported. Please use Chrome, Edge, or Safari.';
+                    if (voiceBtn) voiceBtn.disabled = true;
+                    return;
+                }
+                
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.interimResults = true;
+                recognition.lang = 'en-US';
+                
+                voiceBtn.addEventListener('click', () => {
+                    try {
+                        recognition.start();
+                        voiceBtn.innerHTML = '<i class="fas fa-stop"></i> Listening... Speak Now';
+                        voiceBtn.style.background = '#dc3545';
+                        if (voiceStatus) voiceStatus.innerHTML = '🎤 Listening... Speak clearly';
+                        if (voiceTranscript) voiceTranscript.style.display = 'block';
+                        if (voiceText) voiceText.innerHTML = '<em>Listening...</em>';
+                        
+                        setTimeout(() => {
+                            if (recognition && recognition.stop) recognition.stop();
+                        }, 10000);
+                    } catch (error) {
+                        displayMessage('Microphone access denied. Please check permissions.', 'error');
+                    }
+                });
+                
+                recognition.onresult = (event) => {
+                    let finalTranscript = '';
+                    for (let i = event.resultIndex; i < event.results.length; i++) {
+                        if (event.results[i].isFinal) finalTranscript += event.results[i][0].transcript;
+                    }
+                    if (finalTranscript) {
+                        if (voiceText) voiceText.innerHTML = finalTranscript;
+                        if (voiceStatus) voiceStatus.innerHTML = '🔄 Processing command...';
+                        processVoiceCommand(finalTranscript);
+                        recognition.stop();
+                    }
+                };
+                
+                recognition.onerror = (event) => {
+                    console.error('Recognition error:', event.error);
+                    let errorMsg = '';
+                    if (event.error === 'not-allowed') errorMsg = 'Microphone access denied.';
+                    else if (event.error === 'no-speech') errorMsg = 'No speech detected. Please try again.';
+                    else errorMsg = event.error;
+                    if (errorMsg) displayMessage(errorMsg, 'error');
+                    resetVoiceButton();
+                };
+                
+                recognition.onend = () => resetVoiceButton();
+            }
+            
+            function resetVoiceButton() {
+                if (voiceBtn) {
+                    voiceBtn.innerHTML = '<i class="fas fa-microphone"></i> 🎤 Start Voice Command';
+                    voiceBtn.style.background = '#E58A9F';
+                    if (voiceStatus) voiceStatus.innerHTML = 'Example: "Customer Mary, chest 34, waist 28, senator suit"';
+                }
+            }
+            
+            async function processVoiceCommand(transcript) {
+                displayMessage('Processing: "' + transcript + '"', 'info');
+                try {
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ text: transcript })
+                    });
+                    const result = await response.json();
+                    console.log('Voice result:', result);
+                    
+                    if (result.status === 'success' && result.data) {
+                        const data = result.data;
+                        
+                        // Populate customer name
+                        if (customerName && data.customer && data.customer !== 'Unknown') {
+                            customerName.value = data.customer;
+                        }
+                        
+                        // Populate phone if available
+                        if (customerPhone && data.phone_number) {
+                            customerPhone.value = data.phone_number;
+                        }
+                        
+                        // Populate measurements
+                        const measurements = data.measurements || {};
+                        if (Object.keys(measurements).length > 0) {
+                            populateMeasurementsOnly(measurements);
+                        }
+                        
+                        // Populate garment type if mentioned
+                        if (garmentTypeSelect && data.garment_type) {
+                            for (let i = 0; i < garmentTypeSelect.options.length; i++) {
+                                if (garmentTypeSelect.options[i].value.toLowerCase() === data.garment_type.toLowerCase()) {
+                                    garmentTypeSelect.selectedIndex = i;
+                                    break;
+                                }
+                            }
+                        }
+                        
+                        displayMessage('✅ Voice command processed! Form updated.', 'success');
+                        
+                        // Switch to order form
+                        setTimeout(() => {
+                            if (formTabBtn) formTabBtn.click();
+                        }, 800);
+                    } else {
+                        displayMessage('Could not extract information from voice. Try: "Customer Mary, chest 34"', 'warning');
+                    }
+                } catch (error) {
+                    console.error('Voice processing error:', error);
+                    displayMessage('Failed to process voice command', 'error');
+                }
+            }
+            
+            if (voiceBtn) initVoiceRecognition();
+
+            // Clear form fields after successful submission
+            function clearFormFields() {
+                if (customerName) customerName.value = '';
+                if (customerPhone) customerPhone.value = '';
+                if (dueDate) {
+                    const defaultDate = new Date();
+                    defaultDate.setDate(defaultDate.getDate() + 7);
+                    dueDate.value = defaultDate.toISOString().split('T')[0];
+                }
+                if (garmentTypeSelect) garmentTypeSelect.value = '';
+                if (chestInput) chestInput.value = '';
+                if (waistInput) waistInput.value = '';
+                if (hipsInput) hipsInput.value = '';
+                if (shoulderInput) shoulderInput.value = '';
+                if (sleeveInput) sleeveInput.value = '';
+                if (inseamInput) inseamInput.value = '';
+                if (neckInput) neckInput.value = '';
+                if (fullLengthInput) fullLengthInput.value = '';
+                if (notesText) notesText.value = '';
+                if (imageFile) imageFile.value = '';
+                if (formPreview) formPreview.innerHTML = '';
+                if (fabricEstimateDisplay) fabricEstimateDisplay.style.display = 'none';
+                if (aiPreview) {
+                    aiPreview.style.display = 'none';
+                    aiPreview.innerHTML = '';
+                }
+                if (measurementsLoadedBadge) measurementsLoadedBadge.style.display = 'none';
+                console.log('✅ Form cleared');
+            }
+
+            // FORM SUBMIT
+            if (uploadForm) {
+                uploadForm.onsubmit = async (e) => {
+                    e.preventDefault();
+                    
+                    // Collect measurements
+                    const measurements = {};
+                    if (chestInput?.value) measurements.chest = chestInput.value;
+                    if (waistInput?.value) measurements.waist = waistInput.value;
+                    if (hipsInput?.value) measurements.hips = hipsInput.value;
+                    if (shoulderInput?.value) measurements.shoulder = shoulderInput.value;
+                    if (sleeveInput?.value) measurements.sleeve = sleeveInput.value;
+                    if (inseamInput?.value) measurements.inseam = inseamInput.value;
+                    if (neckInput?.value) measurements.neck = neckInput.value;
+                    if (fullLengthInput?.value) measurements.full_length = fullLengthInput.value;
+                    
+                    const formData = new FormData(uploadForm);
+                    if (Object.keys(measurements).length > 0) {
+                        formData.append('measurements', JSON.stringify(measurements));
+                    }
+                    
+                    displayMessage('Saving order...', 'info');
+                    
+                    try {
+                        const response = await fetch('/upload-style', { method: 'POST', body: formData });
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            displayMessage(`✅ Order for ${data.customer} saved successfully!`, 'success');
+                            clearFormFields();
+                        } else {
+                            displayMessage(`Failed: ${data.detail || 'Unknown error'}`, 'error');
+                        }
+                    } catch (error) {
+                        console.error('Submit error:', error);
+                        displayMessage(`Failed to save order: ${error.message}`, 'error');
+                    }
+                };
+            }
+
+            // File preview
+            if (imageFile && formPreview) {
+                imageFile.onchange = () => {
+                    const file = imageFile.files[0];
+                    if (file) {
+                        formPreview.innerHTML = `<img src="${URL.createObjectURL(file)}" class="preview-image" style="max-width: 200px; border-radius: 12px;">`;
+                    } else {
+                        formPreview.innerHTML = '';
+                    }
+                };
+            }
+
+            window.enlargeImage = function(src) {
+                const modal = document.getElementById('imageModal');
+                const img = document.getElementById('enlargedImg');
+                if (modal && img) { modal.style.display = 'flex'; img.src = src; }
+            };
+            
+            // Set default due date to 7 days from now
+            if (dueDate) {
+                const defaultDate = new Date();
+                defaultDate.setDate(defaultDate.getDate() + 7);
+                dueDate.value = defaultDate.toISOString().split('T')[0];
+            }
+            
+            console.log('✅ Dashboard ready - Scanner with animation and auto-load working!');
+        })();
+    </script>
 </body>
 </html>

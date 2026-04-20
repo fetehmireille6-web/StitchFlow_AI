@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StitchFlow - AI Reminders</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="top-bar">
+        <button id="menuBtn" class="menu-btn"><i class="fas fa-bars"></i></button>
+        <div class="logo-text" style="font-weight: 700; color: #1A4A5C; font-size: 1.2rem;">StitchFlow</div>
+        <div style="width: 40px;"></div>
+    </div>
+
+    <div id="overlay" class="overlay"></div>
+
+    <div id="drawer" class="drawer">
+        <div class="drawer-header">
+            <h2 style="font-size: 1.5rem; color: #1A4A5C;">StitchFlow</h2>
+            <span id="closeDrawer" class="close-btn">&times;</span>
+        </div>
+        <nav class="drawer-nav">
+            <a href="/dashboard"><i class="fas fa-home"></i> Dashboard</a>
+            <a href="/orders-page"><i class="fas fa-clipboard-list"></i> Orders</a>
+            <a href="/reminders" class="active"><i class="fas fa-bell"></i> Reminders</a>
+            <a href="/profile"><i class="fas fa-user"></i> Profile</a>
+            <a href="/logout"><i class="fas fa-sign-out-alt"></i> Logout</a>
+        </nav>
+    </div>
+
+    <div class="container">
+        <div id="messageContainer"></div>
+        <div class="reminder-card">
+            <div class="card-title">
+                <i class="fas fa-bell"></i> AI Deadline Assistant
+            </div>
+            
+            <div id="alertsContainer">
+                <div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading reminders...</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Drawer Logic
+        const menuBtn = document.getElementById('menuBtn');
+        const drawer = document.getElementById('drawer');
+        const overlay = document.getElementById('overlay');
+        const closeDrawer = document.getElementById('closeDrawer');
+        
+        function hideDrawer() {
+            drawer.classList.remove('open');
+            overlay.classList.remove('active');
+        }
+        if (menuBtn) menuBtn.addEventListener('click', () => {
+            drawer.classList.add('open');
+            overlay.classList.add('active');
+        });
+        if (overlay) overlay.addEventListener('click', hideDrawer);
+        if (closeDrawer) closeDrawer.addEventListener('click', hideDrawer);
+
+        async function loadReminders() {
+            const container = document.getElementById('alertsContainer');
+            
+            try {
+                // Fetch orders to check for urgent deadlines
+                const response = await fetch('/orders');
+                const orders = await response.json();
+                
+                const now = new Date();
+                const urgentOrders = [];
+                
+                for (const order of orders) {
+                    const dueDate = new Date(order.due_date);
+                    const daysUntil = Math.ceil((dueDate - now) / (1000 * 60 * 60 * 24));
+                    
+                    if (daysUntil >= 0 && daysUntil <= 2) {
+                        let urgency = '';
+                        let urgencyClass = '';
+                        if (daysUntil === 0) {
+                            urgency = '🔴 DUE TODAY';
+                            urgencyClass = 'hours-tag danger';
+                        } else if (daysUntil === 1) {
+                            urgency = '🟠 DUE TOMORROW';
+                            urgencyClass = 'hours-tag warning';
+                        } else {
+                            urgency = `🟡 Due in ${daysUntil} days`;
+                            urgencyClass = 'hours-tag info';
+                        }
+                        
+                        urgentOrders.push({
+                            customer: order.customer,
+                            garment: order.garment_type || 'Outfit',
+                            due_date: order.due_date,
+                            urgency: urgency,
+                            urgencyClass: urgencyClass
+                        });
+                    }
+                }
+                
+                if (urgentOrders.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-check-circle" style="color: #4CAF50; font-size: 64px;"></i>
+                            <h3>No Urgent Deadlines</h3>
+                            <p>Great news! You have no orders due in the next 48 hours.</p>
+                            <a href="/dashboard" class="btn btn-primary" style="margin-top: 20px;">Create New Order</a>
+                        </div>
+                    `;
+                } else {
+                    container.innerHTML = `
+                        <p style="margin-bottom: 20px;">Here are the orders you need to prioritize in the next 48 hours:</p>
+                        ${urgentOrders.map(order => `
+                            <div class="urgent-item">
+                                <span>🧵 ${order.garment} for ${order.customer} (Due: ${order.due_date})</span>
+                                <span class="${order.urgencyClass}">${order.urgency}</span>
+                            </div>
+                        `).join('')}
+                        <div style="margin-top: 30px; padding: 16px; background: #f8f9fa; border-radius: 16px;">
+                            <p><i class="fas fa-info-circle"></i> <strong>AI Recommendation:</strong> Focus on completing these orders first to ensure on-time delivery.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading reminders:', error);
+                container.innerHTML = '<div class="alert alert-error">Failed to load reminders. Please refresh the page.</div>';
+            }
+        }
+        
+        loadReminders();
+    </script>
+</body>
+</html>

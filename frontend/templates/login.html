@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - StitchFlow</title>
+    <link rel="stylesheet" href="/static/styles.css?v=1.0.2">
+</head>
+<body>
+    <div id="messageContainer"></div>
+    <div class="auth-wrapper">
+        <div class="auth-container">
+            <h1>StitchFlow</h1>
+            <h2>Login</h2>
+            <form class="auth-form" action="/api/login" method="post">
+                <input type="email" name="email" placeholder="Email" required>
+                <input type="password" name="password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+            <p>Don't have an account? <a href="/signup">Sign up</a></p>
+        </div>
+    </div>
+</body>
+</html>
