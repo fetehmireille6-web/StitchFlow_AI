@@ -945,6 +945,8 @@ if (dueDateInput) {
                         if (response.ok) {
                             displayMessage(`✅ Order for ${data.customer} saved successfully!`, 'success');
                             clearFormFields();
+
+                            sessionStorage.setItem('newOrderCreated', 'true');
                         } else {
                             displayMessage(`Failed: ${data.detail || 'Unknown error'}`, 'error');
                         }

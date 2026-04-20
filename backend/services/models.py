@@ -1,5 +1,6 @@
-from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Date, ForeignKey, Text, UniqueConstraint, DateTime
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from services.database import Base
 
 class User(Base):
@@ -9,7 +10,6 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     
-    # Relationships
     customers = relationship("Customer", back_populates="user")
     orders = relationship("Order", back_populates="user")
 
@@ -20,10 +20,8 @@ class Customer(Base):
     phone = Column(String, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     
-    # Composite unique constraint: same user cannot have duplicate customer names
     __table_args__ = (UniqueConstraint('name', 'user_id', name='unique_customer_per_user'),)
     
-    # Relationships
     user = relationship("User", back_populates="customers")
     orders = relationship("Order", back_populates="customer")
 
@@ -36,7 +34,7 @@ class Order(Base):
     image_url = Column(String, nullable=True)
     garment_type = Column(String, nullable=True, default="general")
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)  # ← ADD THIS LINE
     
-    # Relationships
     customer = relationship("Customer", back_populates="orders")
     user = relationship("User", back_populates="orders")

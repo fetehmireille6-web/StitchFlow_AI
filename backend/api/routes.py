@@ -199,7 +199,6 @@ async def process_command(command: UserCommand):
 async def list_orders(request: Request):
     db = SessionLocal()
     try:
-        # Get logged-in user
         user_email = request.cookies.get("user_email")
         if not user_email:
             return []
@@ -208,10 +207,12 @@ async def list_orders(request: Request):
         if not user:
             return []
         
-        # Get orders only for this user
+        # Sort by created_at - NEWEST FIRST
         orders = db.query(models.Order).options(
             joinedload(models.Order.customer)
-        ).filter(models.Order.user_id == user.id).all()
+        ).filter(
+            models.Order.user_id == user.id
+        ).order_by(models.Order.created_at.desc()).all()  # ← Add this line
         
         result_list = []
         for order in orders:
@@ -233,12 +234,10 @@ async def list_orders(request: Request):
                 "measurements": order.measurements or "No measurements recorded",
                 "yardage": yardage,
                 "image_url": order.image_url,
-                "garment_type": garment_type
+                "garment_type": garment_type,
+                "created_at": str(order.created_at) if order.created_at else None  # ← Add this
             })
         return result_list
-    except Exception as e:
-        print(f"Error fetching orders: {e}")
-        return []
     finally:
         db.close()
 
@@ -247,35 +246,51 @@ async def list_orders(request: Request):
 async def delete_order(order_id: int, request: Request):
     db = SessionLocal()
     try:
+        print(f"🗑️ Delete request received for order ID: {order_id}")
+        
         # Get logged-in user
         user_email = request.cookies.get("user_email")
         if not user_email:
+            print("❌ No user email in cookies")
             raise HTTPException(status_code=401, detail="Please login first")
         
         user = db.query(models.User).filter(models.User.email == user_email).first()
         if not user:
+            print(f"❌ User not found for email: {user_email}")
             raise HTTPException(status_code=401, detail="User not found")
         
-        # Verify order belongs to this user
+        print(f"👤 User found: {user.email} (ID: {user.id})")
+        
+        # Find the order - make sure it belongs to this user
         order = db.query(models.Order).filter(
             models.Order.id == order_id,
             models.Order.user_id == user.id
         ).first()
         
         if not order:
+            print(f"❌ Order {order_id} not found for user {user.id}")
             raise HTTPException(status_code=404, detail="Order not found")
         
+        print(f"✅ Found order #{order.id} for customer: {order.customer.name if order.customer else 'Unknown'}")
+        
+        # Delete the order
         db.delete(order)
         db.commit()
-        return {"status": "deleted", "message": f"Order {order_id} deleted"}
+        
+        print(f"✅ Order {order_id} deleted successfully!")
+        
+        return {"status": "deleted", "message": f"Order {order_id} deleted successfully"}
+        
     except HTTPException:
         raise
     except Exception as e:
-        print(f"Error deleting order: {e}")
+        print(f"❌ Error deleting order: {e}")
+        import traceback
+        traceback.print_exc()
+        db.rollback()
         raise HTTPException(status_code=500, detail=f"Error deleting order: {str(e)}")
     finally:
         db.close()
-
 
 @router.post("/send-sms/{order_id}")
 async def send_sms(order_id: int, request: Request):

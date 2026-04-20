@@ -18,7 +18,7 @@
         }
         .order-card:hover {
             transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 25px rgba(26, 74, 92, 0.15);
         }
         .order-card.expanded {
             position: fixed;
@@ -76,7 +76,7 @@
             gap: 10px;
         }
         .order-number {
-            background: linear-gradient(135deg, #1A4A5C, #2C6E82);
+            background: linear-gradient(135deg, #1A4A5C, #2A6A82);
             color: white;
             padding: 5px 12px;
             border-radius: 20px;
@@ -154,7 +154,7 @@
             display: block;
         }
         
-        /* Delete Modal Styles - Matching Edit Modal */
+        /* Delete Modal Styles */
         .modal-overlay {
             position: fixed;
             top: 0;
@@ -197,7 +197,7 @@
         }
         .modal-header h2 {
             margin: 0;
-            color: #1A4A5C;
+            color: #3B82F6;
             font-size: 1.3rem;
         }
         .modal-close {
@@ -249,6 +249,25 @@
             background: #5a6268;
             transform: translateY(-2px);
         }
+        
+        /* New Order Highlight Animation */
+        @keyframes highlightNew {
+            0% {
+                background-color: rgba(26, 74, 92, 0.2);
+                transform: scale(1);
+            }
+            50% {
+                background-color: rgba(26, 74, 92, 0.4);
+                transform: scale(1.01);
+            }
+            100% {
+                background-color: white;
+                transform: scale(1);
+            }
+        }
+        .order-card.new-order {
+            animation: highlightNew 1.5s ease-out;
+        }
     </style>
 </head>
 <body>
@@ -263,7 +282,7 @@
 
     <div id="drawer" class="drawer">
         <div class="drawer-header">
-            <h2 style="font-size: 1.5rem; color: #1A4A5C;">StitchFlow</h2>
+            <h2 style="font-size: 1.5rem; color: white;">StitchFlow</h2>
             <span id="closeDrawer" class="close-btn">&times;</span>
         </div>
         <nav class="drawer-nav">
@@ -281,10 +300,10 @@
         
         <!-- Stats Summary -->
         <div style="display: flex; gap: 20px; margin-bottom: 25px; flex-wrap: wrap;">
-            <div style="background: linear-gradient(135deg, #1A4A5C, #2C6E82); padding: 15px 25px; border-radius: 16px; color: white;">
+            <div style="background: linear-gradient(135deg, #1A4A5C, #2A6A82); padding: 15px 25px; border-radius: 16px; color: white;">
                 <strong>Total Orders:</strong> <span id="totalOrdersCount">0</span>
             </div>
-            <div style="background: #E58A9F; padding: 15px 25px; border-radius: 16px; color: white;">
+            <div style="background: #FF6B9D; padding: 15px 25px; border-radius: 16px; color: white;">
                 <strong>In Progress:</strong> <span id="inProgressCount">0</span>
             </div>
             <div style="background: #28A745; padding: 15px 25px; border-radius: 16px; color: white;">
@@ -350,7 +369,7 @@
                 <p style="font-size: 14px; color: #999;">This action cannot be undone.</p>
             </div>
             <div class="modal-footer">
-                <button class="btn btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+                <button class="btn btn-secondary" id="cancelDeleteBtn">Cancel</button>
                 <button class="btn btn-danger" id="confirmDeleteBtn">Delete Order</button>
             </div>
         </div>
@@ -473,7 +492,6 @@
         }
 
         function expandOrderCard(card) {
-            // Close any other expanded card
             document.querySelectorAll('.order-card.expanded').forEach(c => {
                 if (c !== card) {
                     c.classList.remove('expanded');
@@ -490,10 +508,8 @@
             document.getElementById('overlayDark').classList.remove('active');
         }
 
-        // Close expanded card when clicking overlay
         document.getElementById('overlayDark').addEventListener('click', collapseExpandedCard);
 
-        // Escape key to close expanded card
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Escape') {
                 collapseExpandedCard();
@@ -510,7 +526,6 @@
             return due < todayDate;
         }
 
-        // Load orders from localStorage or create new
         function loadOrderStatuses() {
             const savedStatuses = localStorage.getItem('orderStatuses');
             if (savedStatuses) {
@@ -525,6 +540,15 @@
             localStorage.setItem('orderStatuses', JSON.stringify(statuses));
         }
 
+        function checkForNewOrder() {
+            const isNewOrder = sessionStorage.getItem('newOrderCreated');
+            if (isNewOrder === 'true') {
+                sessionStorage.removeItem('newOrderCreated');
+                return true;
+            }
+            return false;
+        }
+
         async function loadOrders() {
             const container = document.getElementById('ordersList');
             container.innerHTML = '<div class="loading-spinner"><i class="fas fa-spinner fa-spin"></i> Loading orders...</div>';
@@ -534,8 +558,8 @@
                 allOrders = await response.json();
                 
                 const statuses = loadOrderStatuses();
+                const isNewOrder = checkForNewOrder();
                 
-                // Update stats
                 document.getElementById('totalOrdersCount').innerText = allOrders.length;
                 
                 let inProgressCount = 0;
@@ -555,10 +579,9 @@
                     return;
                 }
                 
-                // Sort orders by due date (oldest first)
-                const sortedOrders = [...allOrders].sort((a, b) => new Date(a.due_date) - new Date(b.due_date));
+                // Sort by ID descending (newest first)
+                const sortedOrders = [...allOrders].sort((a, b) => b.id - a.id);
                 
-                // Display with sequential numbering (1, 2, 3...)
                 container.innerHTML = sortedOrders.map((order, index) => {
                     const isOverdue = isDateOverdue(order.due_date);
                     const orderStatus = statuses[order.id] || 'inprogress';
@@ -570,15 +593,21 @@
                         } catch { return {}; }
                     })();
                     const measurementCount = Object.keys(measurementsObj).length;
+                    const orderNumber = index + 1;
+                    const isFirstOrder = index === 0;
                     
                     return `
-                    <div class="order-card" id="order-${order.id}" data-order-id="${order.id}" onclick="event.stopPropagation()">
+                    <div class="order-card ${isNewOrder && isFirstOrder ? 'new-order' : ''}" id="order-${order.id}" data-order-id="${order.id}" onclick="event.stopPropagation()">
                         <div class="close-expand" onclick="collapseExpandedCard()">&times;</div>
                         <div class="order-header">
                             <div>
-                                <span class="order-number">Order ${index + 1}</span>
+                                <span class="order-number">Order #${orderNumber}</span>
                                 <span class="status-badge ${statusClass}" style="margin-left: 10px;">${statusText}</span>
                                 ${isOverdue ? '<span class="status-badge" style="background: #dc3545; color: white; margin-left: 5px;">⚠️ OVERDUE</span>' : ''}
+                                ${isFirstOrder && isNewOrder ? '<span class="status-badge" style="background: #1A4A5C; color: white; margin-left: 5px;">🆕 NEW!</span>' : ''}
+                            </div>
+                            <div style="font-size: 11px; color: #999;">
+                                <i class="fas fa-calendar-alt"></i> ID: ${order.id}
                             </div>
                         </div>
                         <div class="details" onclick="expandOrderCard(this.closest('.order-card'))">
@@ -601,16 +630,38 @@
                         ${order.image_url ? `<img src="${order.image_url}" class="style-thumbnail" onclick="event.stopPropagation(); enlargeImage(this.src)" alt="Style Image">` : ''}
                         <div class="order-actions" onclick="event.stopPropagation()">
                             <button class="edit-btn" onclick="openEditModal(${order.id})"><i class="fas fa-edit"></i> Edit</button>
-                            <button class="delete-btn" onclick="openDeleteModal(${order.id}, ${index + 1}, '${escapeHtml(order.customer)}')"><i class="fas fa-trash"></i> Delete</button>
+                            <button class="delete-btn" data-order-id="${order.id}" data-order-number="${orderNumber}" data-customer="${escapeHtml(order.customer)}"><i class="fas fa-trash"></i> Delete</button>
                             <button class="notify-btn" onclick="sendSMS(${order.id})"><i class="fas fa-sms"></i> Notify</button>
                         </div>
                     </div>
                 `}).join('');
                 
+                // Attach delete event listeners to all delete buttons
+                document.querySelectorAll('.delete-btn').forEach(btn => {
+                    btn.removeEventListener('click', handleDeleteClick);
+                    btn.addEventListener('click', handleDeleteClick);
+                });
+                
+                if (isNewOrder) {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                }
+                
             } catch (error) {
                 console.error('Error loading orders:', error);
                 container.innerHTML = '<div class="alert alert-error">Failed to load orders. Please refresh the page.</div>';
             }
+        }
+        
+        // Handle delete button click
+        function handleDeleteClick(event) {
+            event.stopPropagation();
+            const btn = event.currentTarget;
+            const orderId = btn.getAttribute('data-order-id');
+            const orderNumber = btn.getAttribute('data-order-number');
+            const customerName = btn.getAttribute('data-customer');
+            
+            console.log('Delete clicked:', { orderId, orderNumber, customerName });
+            openDeleteModal(parseInt(orderId), parseInt(orderNumber), customerName);
         }
         
         function escapeHtml(text) {
@@ -622,10 +673,18 @@
 
         // Delete Modal Functions
         function openDeleteModal(orderId, displayNumber, customerName) {
+            console.log('openDeleteModal called with:', { orderId, displayNumber, customerName });
+            
+            if (!orderId || isNaN(orderId)) {
+                console.error('Invalid order ID:', orderId);
+                displayMessage('Error: Cannot delete this order (invalid ID)', 'error');
+                return;
+            }
+            
             currentDeleteOrderId = orderId;
             currentDeleteDisplayNumber = displayNumber;
             currentDeleteOrderName = customerName;
-            document.getElementById('deleteOrderName').innerHTML = `Order ${displayNumber} - ${customerName}`;
+            document.getElementById('deleteOrderName').innerHTML = `Order #${displayNumber} - ${customerName}`;
             document.getElementById('deleteModal').style.display = 'flex';
         }
 
@@ -637,33 +696,46 @@
         }
 
         async function confirmDelete() {
-            if (!currentDeleteOrderId) return;
+            if (!currentDeleteOrderId) {
+                console.error('No order to delete');
+                closeDeleteModal();
+                return;
+            }
             
-            closeDeleteModal();
-            displayMessage('Deleting order...', 'info');
+            console.log('Confirming delete for order:', currentDeleteOrderId);
+            
+            const confirmBtn = document.getElementById('confirmDeleteBtn');
+            const originalText = confirmBtn.innerHTML;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            confirmBtn.disabled = true;
             
             try {
                 const response = await fetch(`/orders/${currentDeleteOrderId}`, { method: 'DELETE' });
+                const result = await response.json();
                 
-                if (response.ok) {
-                    // Remove status from localStorage
+                console.log('Delete response:', result);
+                
+                if (response.ok && result.status === 'deleted') {
                     const statuses = loadOrderStatuses();
                     delete statuses[currentDeleteOrderId];
                     localStorage.setItem('orderStatuses', JSON.stringify(statuses));
                     
-                    displayMessage(`✅ Order ${currentDeleteDisplayNumber} deleted successfully!`, 'success');
+                    displayMessage(`✅ Order #${currentDeleteDisplayNumber} deleted successfully!`, 'success');
+                    closeDeleteModal();
                     await loadOrders();
                 } else {
-                    const error = await response.json();
-                    displayMessage(error.detail || 'Failed to delete order', 'error');
+                    displayMessage(result.detail || 'Failed to delete order', 'error');
+                    closeDeleteModal();
                 }
             } catch (error) {
                 console.error('Error deleting order:', error);
                 displayMessage('Error deleting order. Please try again.', 'error');
+                closeDeleteModal();
+            } finally {
+                confirmBtn.innerHTML = originalText;
+                confirmBtn.disabled = false;
             }
         }
-
-        document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
 
         async function sendSMS(orderId) {
             displayMessage('📱 Sending SMS notification...', 'info');
@@ -728,7 +800,6 @@
                 measurements: document.getElementById('editMeasurements').value
             };
             
-            // Save status to localStorage
             const newStatus = document.getElementById('editStatus').value;
             saveOrderStatus(currentEditOrderId, newStatus);
             
@@ -752,6 +823,10 @@
             }
         }
 
+        // Set up event listeners
+        document.getElementById('confirmDeleteBtn').onclick = confirmDelete;
+        document.getElementById('cancelDeleteBtn').onclick = closeDeleteModal;
+        
         // Load orders on page load
         loadOrders();
         setMinDateOnDateInputs();
